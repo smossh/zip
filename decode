@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <locale.h>
 
 struct letter{
     char value;
@@ -13,88 +12,57 @@ struct letter{
     int counter;
     int flag;
 };
-struct letter* open_file(int *first_size);
+unsigned char* open_file(struct letter **base, int *base_size, int *converted_size);
 struct letter* build_tree(struct letter *leafs, int *tree_size);
 int find_min(struct letter *a, int a_size, int *first_min, int *second_min);
 void create_code(struct letter *node, char cod[]);
-char* pasword(int *code_size);
-char* decode(char *binary_code,int binary_size,struct letter *input,int in_size,int *out_size);
 
 int main(void){
-    int size;
     struct letter *data;
-    int data_size;
-    data=open_file(&size);
-    data_size=size;
-    struct letter *coded;
-    coded=build_tree(data, &size);
-    for(int i=0; i<size; i++){
-        if(coded[i].flag==0){
-            create_code(&coded[i], "0");
-        }
-    }
-    int binary_text_size;
-    char *binary_text=(char*)malloc(99999*sizeof(char));
-    binary_text = pasword(&binary_text_size);
-    int text_size=0;
-    char *text;
-    text=decode(binary_text, binary_text_size, data, data_size, &text_size);
-    printf("%s",text);
+	int data_size, binary_size, size;
+	unsigned char *binary_text;
+	binary_text=open_file(&data, &data_size, &binary_size);
+	printf("nnnn");
+	for(int i=0; i<data_size; i++){
+    	printf("\n%c**%d**{%d}", data[i].value, data[i].frequence, data[i].flag);
+	
+	}
+
+	size=data_size;
+	struct letter *root = build_tree(data, &size);
+	
+	for(int i=0; i<size; i++){
+    	printf("\n%c**%d**%s{%d}", root[i].value, root[i].frequence, root[i].code, root[i].flag);
+	}
+	
+	for (int i = 0; i < size; i++) {
+        if (root[i].flag == 0) {
+            create_code(&root[i], NULL);
+    	}
+    
+	
+	
 }
-
-struct letter* open_file(int *first_size){
-    FILE *input;
-    input=fopen("output.txt", "r");
-    struct letter *first_take=(struct letter*)malloc(256*sizeof(struct letter));
-    if (!first_take) {
-        perror("Memory allocation failed");
-        return NULL;
-    }
-    *first_size=0;
-    while(fscanf(input, "%c %d", &first_take[*first_size].value, &first_take[*first_size].frequence)==2){
-        first_take[*first_size].code[0]='\0';
-        first_take[*first_size].left=NULL;
-        first_take[*first_size].right=NULL;
-        first_take[*first_size].counter=0;
-        first_take[(*first_size)++].digit=0;
-    }
-    fclose(input);
-    first_take=(struct letter*)realloc(first_take, (*first_size)*sizeof(struct letter));
-    if (!first_take) {
-        perror("Memory allocation failed");
-        return NULL;
-    }
-    return first_take;
 }
+void create_code(struct letter *node, char cod[]) {
+	
+	if(node->flag==0){
+		node->code[0]='\0';
+	}else{
+		strcat(node->code, cod);
+	}
+	char code[3];
 
-struct letter* build_tree(struct letter *leafs, int *tree_size) {
-    struct letter *main_tree = (struct letter *)malloc(*tree_size * 2 * sizeof(struct letter));
-    if (!main_tree) {
-        perror("Memory allocation failed");
-        return NULL;
+    if (node->left != NULL) {
+        strcpy(node->left->code, node->code);
+        create_code(node->left, "0");
     }
-
-    for (int i = 0; i < *tree_size * 2; i++) {
-        main_tree[i].code[0] = '\0';
-        main_tree[i].left = NULL;
-        main_tree[i].right = NULL;
-        main_tree[i].value = '\0';
-        main_tree[i].frequence = 0;
-        main_tree[i].digit=0;
-        main_tree[i].counter=0;
-        main_tree[i].flag=0;
+    if (node->right != NULL) {
+        strcpy(node->right->code, node->code);
+        create_code(node->right, "1");
     }
-    main_tree = leafs;
-    int min1 = 0, min2 = 0;
-
-    while (find_min(main_tree, *tree_size, &min1, &min2)) {
-        main_tree[*tree_size].left = &main_tree[min1];
-        main_tree[*tree_size].right = &main_tree[min2];
-        main_tree[*tree_size].frequence = main_tree[min1].frequence + main_tree[min2].frequence;
-        (*tree_size)++;
-    }
-    main_tree[min1].flag = 0;
-    return main_tree;
+    
+	return;
 }
 
 int find_min(struct letter *a, int a_size, int *first_min, int *second_min) {
@@ -124,106 +92,107 @@ int find_min(struct letter *a, int a_size, int *first_min, int *second_min) {
     a[*second_min].flag = 1;
     return 1;
 }
-void create_code(struct letter *node, char cod[]) {
-    strcat(node->code, cod);
-    printf("%s/// %d***%c\n", node->code, node->frequence, node->value);
-    if (node->left != NULL) {
-        strcpy(node->left->code, node->code);
-        create_code(node->left, "0");
-    }
-    if (node->right != NULL) {
-        strcpy(node->right->code, node->code);
-        create_code(node->right, "1");
-    }
-}
 
-char* pasword(int *code_size){
-    setlocale(LC_ALL, "");
-    FILE *pas;
-    pas=fopen("output.txt","r");
-    char l[9999];
-    int bin[99999],syc=0;
-    char *code_arr;
-    code_arr=(char*)malloc(9999*sizeof(char));
-    if (!code_arr) {
-        perror("Memory allocation failed");
+
+struct letter* build_tree(struct letter *leafs, int *tree_size) {
+	
+    struct letter *main_tree = (struct letter *)malloc(*tree_size * 2 * sizeof(struct letter));
+    if (!main_tree) {
+        perror("Memory allocation failed  main tree");
         return NULL;
     }
-    
-    fgets(l, 3000, pas);
 
-    wint_t x;
-
-    while ((x = fgetwc(pas)) != WEOF) {
-        if (x != L'\n') {
-            bin[syc]=(int)x;
-        }
-          printf("%lc * %d\n", x, bin[syc]);
-          syc++;
+    for (int i = 0; i < (*tree_size) * 2; i++) {
+        main_tree[i].code[0] = '\0';
+        main_tree[i].left = NULL;
+        main_tree[i].right = NULL;
+        main_tree[i].flag = 0;
+        main_tree[i].value = '\0';
+        main_tree[i].frequence = 0;
+        main_tree[i].digit=0;
+        main_tree[i].counter=0;
     }
     
-    int temp;
-    for(int i=0;i<syc;i++){
-        temp=bin[i];
-
-        for(int j=7;j>=0;j--){
-            if(temp!=0){
-                if(temp%2==1){
-                    code_arr[j+(8*i)]='1';
-                }else if(temp%2==0){
-                    code_arr[j+(8*i)]='0';
-                }
-                    temp/=2;
-            }else{
-
-                code_arr[j+(8*i)]='0';
-            }
-
-        }
+    main_tree = leafs;
+    for (int i = 0; i < (*tree_size) * 2; i++) {
+        printf("\n%c^^%d{%d}", main_tree[i].value, main_tree[i].frequence, main_tree[i].flag);
     }
-    *code_size=syc*8;
-    code_arr=(char*)realloc(code_arr,(*code_size)*sizeof(char));
-    if (!code_arr) {
-        perror("Memory allocation failed");
-        return NULL;
-    }
-    printf("\n");
-    for(int i=0;i<*code_size;i++){
-        printf("%c",code_arr[i]);
-    }
+    
+    int min1 = 0, min2 = 0;
 
-    return code_arr;
+    while (find_min(main_tree, *tree_size, &min1, &min2)) {
+        main_tree[*tree_size].left = &main_tree[min1];
+        main_tree[*tree_size].right = &main_tree[min2];
+        main_tree[(*tree_size)++].frequence = main_tree[min1].frequence + main_tree[min2].frequence;
+    }
+    
+    main_tree[min1].flag = 0;
+    return main_tree;
 }
-char* decode(char *binary_code,int binary_size,struct letter *input,int in_size,int *out_size){
 
-    char *out=(char*)malloc(binary_size*sizeof(char));
-     *out_size=0;
-     int control=1;
-    for (int i=0; i<in_size; i++) {
-        input[i].digit= (int)strlen(input[i].code);
-    }
+unsigned char* open_file(struct letter *base, int *base_size, int *converted_size) {
+	base=(struct letter*)malloc(999999*sizeof(struct letter));
+	if (!base) {
+	        perror("Memory allocation failed");
+	        exit(EXIT_FAILURE);
+	}
+	   
+	FILE *in;
+	in=fopen("output.txt","r");
+	*base_size=0;
+	while(fscanf(in,"%c %d ",&base[*base_size].value,&base[*base_size].frequence)==2){
+		base[*base_size].code[0]='\0';
+		base[*base_size].right=NULL;
+		base[*base_size].left=NULL;
+		base[*base_size].flag=0;
+		base[*base_size].digit=0;
+		base[*base_size].counter=0;
+		(*base_size)++;
+		printf("bbb\n");
+	}
+	base=(struct letter*)realloc(base,(*base_size)*sizeof(struct letter));
+	if (!base) {
+	        perror("Memory allocation failed base realloc");
+	        exit(EXIT_FAILURE);
+	}
+	
+	for(int i=0;i<*base_size;i++){
+		printf("%c * %d\n",base[i].value,base[i].frequence);
+	}
+	
+	unsigned char x, *code_arr=(unsigned char*)malloc(99999*sizeof(unsigned char));
+	int syc=0, *bin=(int*)malloc(99999*sizeof(int));
+	
+	while (fread(&x, sizeof(unsigned char), 1, in) == 1) {
+       	if (x != L'\n') {
+	        bin[syc]=x;
+	    }
+	    printf("%c * %d\n", x, bin[syc++]);
+	}
     
-    for(int i=0; i<binary_size && control; i+=0){
-        for(int j=0; j<in_size; j++){
-            if(strncmp(&binary_code[i], input[j].code, input[j].digit)==0){
-                if(input[j].counter<input[j].frequence){
-                    (input[j].counter)++;
-                    out[*out_size]=input[j].value;
-                    i+=(input[j].digit);
-                    (*out_size)++;
-                    break;
-                }
-            }
-        }
-        control=0;
-        for(int i=0;i<in_size;i++){
-            if(input[i].counter<input[i].frequence){
-                control=1;
-            }
-        }
-    }
-    return out;
+	int temp;
+	for(int i=0;i<syc;i++){
+	    temp=bin[i];
+	    for(int j=7;j>=0;j--){
+	    	if(temp==0){
+	    		code_arr[j+(8*i)]=0;
+			}else{
+	    		code_arr[j+(8*i)]=temp%2;
+	    		temp/=2;
+			}
+				
+		}
+			
+	}
+	*converted_size=syc*8;
+	for(int i=0; i<8*syc; i++){
+		printf("%d",code_arr[i]); 
+	}
+	
+	return code_arr;
+		
 }
+
 
 
 
