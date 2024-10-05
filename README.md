@@ -16,6 +16,7 @@ Encode: Convert the original text into a binary string using the generated Huffm
 Decode: Rebuild the original text from the binary string by traversing the Huffman tree.
 
 Here is the pseudocode for encode: 
+
 “main” Function:
 1) Reads the file and creates a node by determining the frequency of each different character
 2) Runs it by sending the nodes and the number of nodes to the build_tree function
